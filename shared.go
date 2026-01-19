@@ -4,6 +4,8 @@ const (
 	TaskQueue = "ORDER_QUEUE"
 	NatsSubjectInv = "service.inventory"
 	NatsSubjectPay = "service.payment"
+	NatsSubjectRefund = "service.refund"
+	NatsSubjectRestock = "service.restock"
 )
 
 type Order struct {

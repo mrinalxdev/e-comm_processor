@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -16,8 +17,7 @@ func OrderWorkflow(ctx workflow.Context, order Order) (string, error){
 	
 	ctx = workflow.WithActivityOptions(ctx, options)
 	
-	var invResult ServiceResponse
-	var payResult ServiceResponse
+	var invResult, payResult, refundResult, restockResult ServiceResponse
 	
 	err := workflow.ExecuteActivity(ctx, CallNatsService, NatsSubjectPay, order).Get(ctx, &invResult)
 	if err != nil || !invResult.Success {
@@ -28,6 +28,28 @@ func OrderWorkflow(ctx workflow.Context, order Order) (string, error){
 	if err != nil || !payResult.Success {
 		return "payment failed", err
 	}
+	
+	
+	//now we are just pretending that the order is waiting for shipping
+	//so the new feature is defined as, checking if we should cancel
+	
+	if order.Item == "Golang Book"{
+		fmt.Println("cancellation request recieved for 'Golang Book !!'")
+		err = workflow.ExecuteActivity(ctx, CallNatsService, NatsSubjectRefund, order).Get(ctx, &refundResult)
+        if err != nil {
+            return "Refund Failed (Critical Error)", err
+        }
+
+        
+        err = workflow.ExecuteActivity(ctx, CallNatsService, NatsSubjectRestock, order).Get(ctx, &restockResult)
+        if err != nil {
+            return "Restock Failed (Critical Error)", err
+        }
+
+        return "Order Cancelled & Refunded (Saga Complete)", nil
+    }
+
+
 	
 	return "Order Processed Successfully", nil
 }
