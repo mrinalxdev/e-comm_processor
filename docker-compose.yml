@@ -1,0 +1,22 @@
+services:
+  nats:
+    image: nats:latest
+    command: "-js"
+    ports: ["4222:4222", "8222:8222"]
+
+  temporal:
+    image: temporalio/auto-setup:latest
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=temporal
+      - POSTGRES_PWD=temporal
+      - POSTGRES_SEEDS=postgresql
+    depends_on: [postgresql]
+    ports: ["7233:7233", "8233:8233"] 
+
+  postgresql:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=temporal
+      - POSTGRES_PASSWORD=temporal
